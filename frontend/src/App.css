@@ -1,0 +1,79 @@
+:root {
+  --bg-light: #f9f9f9;
+  --text-dark: #2c2c2c;
+  --accent-yellow: #ffd700;
+  --red-high: #ff4444;
+  --green-low: #4caf50;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --gradient: linear-gradient(135deg, #fff, #f0f0f0);
+}
+
+.App {
+  min-height: 100vh;
+  background: var(--gradient);
+  color: var(--text-dark);
+  font-family: 'Montserrat', sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+header {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  box-shadow: 0 2px 10px var(--shadow-light);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo {
+  height: 45px;
+  width: auto;
+}
+
+button {
+  background: var(--accent-yellow);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 50px;
+  color: var(--text-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.risk-display {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 4px 15px var(--shadow-light);
+}
+
+.map-placeholder {
+  flex: 1;
+  height: 600px;
+  background: #ddd;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
