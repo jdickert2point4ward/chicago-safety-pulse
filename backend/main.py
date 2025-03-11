@@ -33,7 +33,7 @@ async def get_risk(data: dict):
     lat_idx = max(0, min(4, lat_idx))
     lon_idx = max(0, min(4, lon_idx))
 
-    risk = int(risk_grid[lat_idx, lon_idx])
+    risk = int(risk_grid[lat_idx, lon_idx])  # Convert to int
     risk_score = 50 + 50 * risk
 
     return {
@@ -51,9 +51,9 @@ async def get_heatmap_data():
         data = []
         for i in range(len(lat_steps) - 1):
             for j in range(len(lon_steps) - 1):
-                lat = (lat_steps[i] + lat_steps[i + 1]) / 2
-                lon = (lon_steps[j] + lon_steps[j + 1]) / 2
-                risk = risk_grid[i, j]
+                lat = float((lat_steps[i] + lat_steps[i + 1]) / 2)  # Convert to float
+                lon = float((lon_steps[j] + lon_steps[j + 1]) / 2)  # Convert to float
+                risk = int(risk_grid[i, j])  # Convert numpy.int64 to int
                 risk_score = 50 + 50 * risk  # 0-100 scale
                 data.append({
                     "latitude": lat,
