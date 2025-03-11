@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Map, NavigationControl } from "react-map-gl";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./App.css";
 import logo from "./logo.png";
-import { DeckGL } from "@deck.gl/react";
-import { BitmapLayer } from "@deck.gl/layers"; // Use BitmapLayer for heatmap
 
-// Ensure mapboxgl is available globally
 if (typeof window !== "undefined") {
   window.mapboxgl = mapboxgl;
 }
@@ -16,70 +12,181 @@ if (typeof window !== "undefined") {
 function App() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
-  const [heatmapData, setHeatmapData] = useState([]);
+  const mapContainer = useRef(null);
+  const map = useRef(null);
 
   const handleLiveLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        axios.post("http://localhost:8000/risk", { latitude, longitude })
-          .then(res => {
+        axios
+          .post("http://localhost:8000/risk", { latitude, longitude })
+          .then((res) => {
             setResults(res.data);
-            updateHeatmap(latitude, longitude);
+            map.current.flyTo({
+              center: [longitude, latitude],
+              zoom: 12,
+              pitch: 45, // Add 3D tilt
+              bearing: 30, // Slight rotation for a dynamic look
+            });
           })
-          .catch(err => setError(err.message || "Failed to get risk"));
+          .catch((err) => setError(err.message || "Failed to get risk"));
       },
       (err) => {
         setError("Location denied—using Chicago center");
-        axios.post("http://localhost:8000/risk", { latitude: 41.85, longitude: -87.65 })
-          .then(res => {
+        axios
+          .post("http://localhost:8000/risk", { latitude: 41.85, longitude: -87.65 })
+          .then((res) => {
             setResults(res.data);
-            updateHeatmap(41.85, -87.65);
+            map.current.flyTo({
+              center: [-87.65, 41.85],
+              zoom: 12,
+              pitch: 45,
+              bearing: 30,
+            });
           });
       },
       { timeout: 5000 }
     );
   };
 
-  // Mock heatmap data with positions and weights (to be replaced with real data)
-  const updateHeatmap = (latitude, longitude) => {
-    const latMin = 41.64;
-    const latMax = 42.06;
-    const lonMin = -87.94;
-    const lonMax = -87.52;
-    const data = [];
-    for (let i = 0; i < 50; i++) {
-      const lat = latMin + Math.random() * (latMax - latMin);
-      const lon = lonMin + Math.random() * (lonMax - lonMin);
-      const safetyScore = Math.random() * 100; // 0-100 scale
-      data.push({
-        position: [lon, lat],
-        weight: safetyScore > 50 ? 1 - (safetyScore / 100) : safetyScore / 50 // 0 = high risk, 1 = low risk
-      });
-    }
-    setHeatmapData(data);
-  };
-
   useEffect(() => {
-    // Initialize heatmap with Chicago center
-    updateHeatmap(41.85, -87.65);
-  }, []);
+    mapboxgl.accessToken = "pk.eyJ1IjoiamQycG9pbnQ0IiwiYSI6ImNtODRzdWhsMDI0dHgya29rdzhheThyYzAifQ.-plPPxJy9optiopAZdMO2A";
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/light-v11",
+      center: [-87.65, 41.85],
+      zoom: 10,
+      pitch: 45, // 3D effect
+      bearing: 30, // Slight rotation
+    });
 
-  const layers = [
-    new BitmapLayer({
-      id: "heatmap-layer",
-      data: heatmapData,
-      getPosition: d => d.position,
-      getColorWeight: d => d.weight,
-      colorRange: [
-        [0, 128, 0, 100],   // Green (low risk)
-        [255, 255, 0, 100], // Yellow (moderate risk)
-        [255, 0, 0, 100],   // Red (high risk)
-      ],
-      opacity: 0.7,
-      bounds: [lonMin, latMin, lonMax, latMax], // Chicago bounds
-    }),
-  ];
+    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    map.current.on("load", () => {
+      axios.get("http://localhost:8000/heatmap-data").then((res) => {
+        const data = res.data;
+        map.current.addSource("safety-data", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: data.map((point) => ({
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: [point.longitude, point.latitude],
+              },
+              properties: {
+                risk_score: point.risk_score,
+              },
+            })),
+          },
+        });
+
+        map.current.addLayer({
+          id: "safety-heatmap",
+          type: "heatmap",
+          source: "safety-data",
+          paint: {
+            "heatmap-weight": [
+              "interpolate",
+              ["linear"],
+              ["get", "risk_score"],
+              0,
+              0,
+              100,
+              1,
+            ],
+            "heatmap-intensity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0,
+              1,
+              12,
+              3,
+            ],
+            "heatmap-color": [
+              "interpolate",
+              ["linear"],
+              ["heatmap-density"],
+              0,
+              "rgba(0, 128, 0, 0)", // Green (low risk)
+              0.3,
+              "rgb(0, 128, 0)", // Green
+              0.5,
+              "rgb(255, 255, 0)", // Yellow (moderate risk)
+              0.7,
+              "rgb(255, 165, 0)", // Orange
+              1,
+              "rgb(255, 0, 0)", // Red (high risk)
+            ],
+            "heatmap-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0,
+              20,
+              12,
+              40,
+            ],
+            "heatmap-opacity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              7,
+              1,
+              12,
+              0.7,
+            ],
+          },
+        });
+
+        // Add a circle layer for better point visibility at higher zooms
+        map.current.addLayer({
+          id: "safety-points",
+          type: "circle",
+          source: "safety-data",
+          minzoom: 11,
+          paint: {
+            "circle-radius": 5,
+            "circle-color": [
+              "interpolate",
+              ["linear"],
+              ["get", "risk_score"],
+              0,
+              "rgb(0, 128, 0)", // Green
+              50,
+              "rgb(255, 255, 0)", // Yellow
+              100,
+              "rgb(255, 0, 0)", // Red
+            ],
+            "circle-opacity": 0.8,
+          },
+        });
+
+        // Add interactivity: show popup on click
+        map.current.on("click", "safety-points", (e) => {
+          const coordinates = e.features[0].geometry.coordinates.slice();
+          const riskScore = e.features[0].properties.risk_score;
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(`<h3>Risk Score: ${riskScore.toFixed(1)}</h3>`)
+            .addTo(map.current);
+        });
+
+        map.current.on("mouseenter", "safety-points", () => {
+          map.current.getCanvas().style.cursor = "pointer";
+        });
+
+        map.current.on("mouseleave", "safety-points", () => {
+          map.current.getCanvas().style.cursor = "";
+        });
+      });
+    });
+
+    return () => map.current.remove();
+  }, []);
 
   return (
     <div className="App">
@@ -103,24 +210,7 @@ function App() {
           )}
         </div>
         <div className="map-container">
-          <DeckGL
-            initialViewState={{
-              latitude: 41.85,
-              longitude: -87.65,
-              zoom: 10,
-              bearing: 0,
-              pitch: 0,
-            }}
-            controller={true}
-            layers={layers}
-          >
-            <Map
-              mapStyle="mapbox://styles/mapbox/light-v11"
-              mapboxAccessToken="pk.eyJ1IjoiamQycG9pbnQ0IiwiYSI6ImNtODRzdWhsMDI0dHgya29rdzhheThyYzAifQ.-plPPxJy9optiopAZdMO2A"
-            >
-              <NavigationControl position="top-right" />
-            </Map>
-          </DeckGL>
+          <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
         </div>
       </div>
     </div>
