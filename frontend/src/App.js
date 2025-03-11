@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "./App.css";
 import logo from "./logo.png";
 import { DeckGL } from "@deck.gl/react";
-import { ScreenGridLayer } from "@deck.gl/aggregation-layers"; // Use ScreenGridLayer for heatmap
+import { BitmapLayer } from "@deck.gl/layers"; // Use BitmapLayer for heatmap
 
 // Ensure mapboxgl is available globally
 if (typeof window !== "undefined") {
@@ -41,24 +41,21 @@ function App() {
     );
   };
 
-  // Mock heatmap data based on the 5x5 grid (to be refined with /risk data later)
+  // Mock heatmap data with positions and weights (to be replaced with real data)
   const updateHeatmap = (latitude, longitude) => {
     const latMin = 41.64;
     const latMax = 42.06;
     const lonMin = -87.94;
     const lonMax = -87.52;
     const data = [];
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < 5; j++) {
-        const lat = latMin + (i * (latMax - latMin) / 5);
-        const lon = lonMin + (j * (lonMax - lonMin) / 5);
-        // Mock safety score: lower intensity for safer areas, higher for risk
-        const safetyScore = Math.random() * 100; // 0-100 scale
-        data.push({
-          position: [lon, lat],
-          weight: safetyScore > 50 ? 1 - (safetyScore / 100) : safetyScore / 50 // Invert for safety (0 = high risk, 1 = low risk)
-        });
-      }
+    for (let i = 0; i < 50; i++) {
+      const lat = latMin + Math.random() * (latMax - latMin);
+      const lon = lonMin + Math.random() * (lonMax - lonMin);
+      const safetyScore = Math.random() * 100; // 0-100 scale
+      data.push({
+        position: [lon, lat],
+        weight: safetyScore > 50 ? 1 - (safetyScore / 100) : safetyScore / 50 // 0 = high risk, 1 = low risk
+      });
     }
     setHeatmapData(data);
   };
@@ -69,20 +66,18 @@ function App() {
   }, []);
 
   const layers = [
-    new ScreenGridLayer({
-      id: "screengrid-layer",
+    new BitmapLayer({
+      id: "heatmap-layer",
       data: heatmapData,
       getPosition: d => d.position,
-      getWeight: d => d.weight,
-      cellSizePixels: 30, // Size of grid cells on screen
-      minColor: [0, 128, 0, 100],  // Green (low risk)
-      maxColor: [255, 0, 0, 100],  // Red (high risk)
+      getColorWeight: d => d.weight,
       colorRange: [
-        [0, 128, 0, 100],   // Green
-        [255, 255, 0, 100], // Yellow
-        [255, 0, 0, 100],   // Red
+        [0, 128, 0, 100],   // Green (low risk)
+        [255, 255, 0, 100], // Yellow (moderate risk)
+        [255, 0, 0, 100],   // Red (high risk)
       ],
-      opacity: 0.8,
+      opacity: 0.7,
+      bounds: [lonMin, latMin, lonMax, latMax], // Chicago bounds
     }),
   ];
 
