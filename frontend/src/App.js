@@ -15,6 +15,28 @@ function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
 
+  const updateHeatmap = () => {
+    axios.get("http://localhost:8000/heatmap-data").then((res) => {
+      const data = res.data;
+      const source = map.current.getSource("safety-data");
+      if (source) {
+        source.setData({
+          type: "FeatureCollection",
+          features: data.map((point) => ({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [point.longitude, point.latitude],
+            },
+            properties: {
+              risk_score: point.risk_score,
+            },
+          })),
+        });
+      }
+    });
+  };
+
   const handleLiveLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -26,9 +48,10 @@ function App() {
             map.current.flyTo({
               center: [longitude, latitude],
               zoom: 12,
-              pitch: 45, // Add 3D tilt
-              bearing: 30, // Slight rotation for a dynamic look
+              pitch: 45,
+              bearing: 30,
             });
+            updateHeatmap(); // Refresh heatmap
           })
           .catch((err) => setError(err.message || "Failed to get risk"));
       },
@@ -44,6 +67,7 @@ function App() {
               pitch: 45,
               bearing: 30,
             });
+            updateHeatmap(); // Refresh heatmap
           });
       },
       { timeout: 5000 }
@@ -57,8 +81,14 @@ function App() {
       style: "mapbox://styles/mapbox/light-v11",
       center: [-87.65, 41.85],
       zoom: 10,
-      pitch: 45, // 3D effect
-      bearing: 30, // Slight rotation
+      pitch: 45,
+      bearing: 30,
+      fog: { // Add atmospheric fog for a modern look
+        "range": [0.5, 10],
+        "color": "rgba(255, 255, 255, 0.5)",
+        "high-color": "rgba(255, 255, 255, 0.3)",
+        "horizon-blend": 0.1
+      }
     });
 
     map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
@@ -142,7 +172,6 @@ function App() {
           },
         });
 
-        // Add a circle layer for better point visibility at higher zooms
         map.current.addLayer({
           id: "safety-points",
           type: "circle",
@@ -165,7 +194,6 @@ function App() {
           },
         });
 
-        // Add interactivity: show popup on click
         map.current.on("click", "safety-points", (e) => {
           const coordinates = e.features[0].geometry.coordinates.slice();
           const riskScore = e.features[0].properties.risk_score;
@@ -182,6 +210,17 @@ function App() {
         map.current.on("mouseleave", "safety-points", () => {
           map.current.getCanvas().style.cursor = "";
         });
+
+        // Add a legend
+        const legend = document.createElement("div");
+        legend.className = "map-legend";
+        legend.innerHTML = `
+          <h4>Risk Levels</h4>
+          <div class="legend-item"><span style="background: rgb(0, 128, 0);"></span>Low Risk (0-30)</div>
+          <div class="legend-item"><span style="background: rgb(255, 255, 0);"></span>Moderate Risk (30-70)</div>
+          <div class="legend-item"><span style="background: rgb(255, 0, 0);"></span>High Risk (70-100)</div>
+        `;
+        map.current.getContainer().appendChild(legend);
       });
     });
 
