@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  width: 100vw; /* Ensure App takes full viewport width */
+  width: 100vw;
 }
 
 header {
@@ -57,14 +57,14 @@ button {
 .content {
   flex: 1;
   display: flex;
-  flex-direction: row; /* Explicit row direction */
+  flex-direction: row;
   padding: 20px;
   gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  align-items: stretch;
-  width: 100%; /* Ensure content takes full width of parent */
-  box-sizing: border-box; /* Prevent padding from affecting width */
+  align-items: center; /* Center vertically */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .risk-display {
@@ -77,7 +77,8 @@ button {
   border-radius: 15px;
   padding: 15px;
   box-shadow: 0 4px 15px var(--shadow-light);
-  flex-shrink: 0; /* Prevent shrinking */
+  flex-shrink: 0;
+  height: 600px; /* Match map-container height */
 }
 
 .risk-circle {
@@ -118,14 +119,14 @@ button {
   box-shadow: 0 4px 15px var(--shadow-light);
   position: relative;
   overflow: hidden;
-  min-width: 0; /* Prevent flex item from shrinking below content */
-  width: 100%; /* Ensure it takes available width */
+  min-width: 0;
+  width: 100%;
 }
 
 .mapboxgl-map {
   width: 100% !important;
   height: 100% !important;
-  position: absolute; /* Ensure map fills container */
+  position: absolute;
   top: 0;
   left: 0;
 }
