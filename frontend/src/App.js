@@ -43,8 +43,10 @@ function App() {
 
   // Mock heatmap data based on the 5x5 grid (to be refined later)
   const updateHeatmap = (latitude, longitude) => {
-    const latMin, latMax = 41.64, 42.06;
-    const lonMin, lonMax = -87.94, -87.52;
+    const latMin = 41.64;
+    const latMax = 42.06;
+    const lonMin = -87.94;
+    const lonMax = -87.52;
     const data = [];
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
