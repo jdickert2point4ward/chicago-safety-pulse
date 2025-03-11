@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "./App.css";
 import logo from "./logo.png";
 import { DeckGL } from "@deck.gl/react";
-import { HeatmapLayer } from "@deck.gl/layers";
+import { HexagonLayer } from "@deck.gl/aggregation-layers"; // Updated import
 
 // Ensure mapboxgl is available globally
 if (typeof window !== "undefined") {
@@ -25,7 +25,7 @@ function App() {
         axios.post("http://localhost:8000/risk", { latitude, longitude })
           .then(res => {
             setResults(res.data);
-            updateHeatmap(latitude, longitude); // Update heatmap based on location
+            updateHeatmap(latitude, longitude);
           })
           .catch(err => setError(err.message || "Failed to get risk"));
       },
@@ -34,7 +34,7 @@ function App() {
         axios.post("http://localhost:8000/risk", { latitude: 41.85, longitude: -87.65 })
           .then(res => {
             setResults(res.data);
-            updateHeatmap(41.85, -87.65); // Update heatmap with Chicago center
+            updateHeatmap(41.85, -87.65);
           });
       },
       { timeout: 5000 }
@@ -67,14 +67,23 @@ function App() {
   }, []);
 
   const layers = [
-    new HeatmapLayer({
-      id: "heatmap-layer",
+    new HexagonLayer({
+      id: "hexagon-layer",
       data: heatmapData,
       getPosition: d => d.position,
-      getWeight: d => d.intensity,
-      radiusPixels: 30,
-      intensity: 1,
-      threshold: 0.05,
+      getElevationWeight: d => d.intensity,
+      elevationScale: 100,
+      radius: 1000, // Radius in meters
+      opacity: 0.6,
+      extruded: true, // 3D effect
+      colorRange: [
+        [255, 255, 178], // Light yellow
+        [254, 204, 92],  // Yellow-orange
+        [253, 141, 60],  // Orange
+        [240, 59, 32],   // Red-orange
+        [189, 0, 38],    // Red
+        [128, 0, 38],    // Dark red
+      ],
     }),
   ];
 
