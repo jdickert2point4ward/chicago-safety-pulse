@@ -1,10 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
-from risk_grid import generate_mock_risk_grid, generate_heatmap_image
-from fastapi.responses import StreamingResponse
-from io import BytesIO
-import matplotlib.pyplot as plt
+from risk_grid import generate_mock_risk_grid
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -46,14 +43,25 @@ async def get_risk(data: dict):
         "longitude": longitude
     }
 
-@app.get("/heatmap")
-async def get_heatmap():
+@app.get("/heatmap-data")
+async def get_heatmap_data():
     try:
-        logger.info("Generating heatmap...")
+        logger.info("Generating heatmap data...")
         lat_steps, lon_steps, risk_grid = generate_mock_risk_grid()
-        buf = generate_heatmap_image(risk_grid, lat_steps, lon_steps)
-        logger.info("Heatmap generated successfully")
-        return StreamingResponse(buf, media_type="image/png")
+        data = []
+        for i in range(len(lat_steps) - 1):
+            for j in range(len(lon_steps) - 1):
+                lat = (lat_steps[i] + lat_steps[i + 1]) / 2
+                lon = (lon_steps[j] + lon_steps[j + 1]) / 2
+                risk = risk_grid[i, j]
+                risk_score = 50 + 50 * risk  # 0-100 scale
+                data.append({
+                    "latitude": lat,
+                    "longitude": lon,
+                    "risk_score": risk_score
+                })
+        logger.info("Heatmap data generated successfully")
+        return data
     except Exception as e:
-        logger.error(f"Error generating heatmap: {str(e)}")
+        logger.error(f"Error generating heatmap data: {str(e)}")
         return {"error": str(e)}, 500
