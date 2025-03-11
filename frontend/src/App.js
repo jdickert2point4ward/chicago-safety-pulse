@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "./App.css";
 import logo from "./logo.png";
 import { DeckGL } from "@deck.gl/react";
-import { HexagonLayer } from "@deck.gl/aggregation-layers"; // Updated import
+import { ScreenGridLayer } from "@deck.gl/aggregation-layers"; // Use ScreenGridLayer for heatmap
 
 // Ensure mapboxgl is available globally
 if (typeof window !== "undefined") {
@@ -41,7 +41,7 @@ function App() {
     );
   };
 
-  // Mock heatmap data based on the 5x5 grid (to be refined later)
+  // Mock heatmap data based on the 5x5 grid (to be refined with /risk data later)
   const updateHeatmap = (latitude, longitude) => {
     const latMin = 41.64;
     const latMax = 42.06;
@@ -52,9 +52,11 @@ function App() {
       for (let j = 0; j < 5; j++) {
         const lat = latMin + (i * (latMax - latMin) / 5);
         const lon = lonMin + (j * (lonMax - lonMin) / 5);
+        // Mock safety score: lower intensity for safer areas, higher for risk
+        const safetyScore = Math.random() * 100; // 0-100 scale
         data.push({
           position: [lon, lat],
-          intensity: Math.random() * 10 + (i === 2 && j === 2 ? 20 : 0) // Higher intensity at center
+          weight: safetyScore > 50 ? 1 - (safetyScore / 100) : safetyScore / 50 // Invert for safety (0 = high risk, 1 = low risk)
         });
       }
     }
@@ -67,23 +69,20 @@ function App() {
   }, []);
 
   const layers = [
-    new HexagonLayer({
-      id: "hexagon-layer",
+    new ScreenGridLayer({
+      id: "screengrid-layer",
       data: heatmapData,
       getPosition: d => d.position,
-      getElevationWeight: d => d.intensity,
-      elevationScale: 100,
-      radius: 1000, // Radius in meters
-      opacity: 0.6,
-      extruded: true, // 3D effect
+      getWeight: d => d.weight,
+      cellSizePixels: 30, // Size of grid cells on screen
+      minColor: [0, 128, 0, 100],  // Green (low risk)
+      maxColor: [255, 0, 0, 100],  // Red (high risk)
       colorRange: [
-        [255, 255, 178], // Light yellow
-        [254, 204, 92],  // Yellow-orange
-        [253, 141, 60],  // Orange
-        [240, 59, 32],   // Red-orange
-        [189, 0, 38],    // Red
-        [128, 0, 38],    // Dark red
+        [0, 128, 0, 100],   // Green
+        [255, 255, 0, 100], // Yellow
+        [255, 0, 0, 100],   // Red
       ],
+      opacity: 0.8,
     }),
   ];
 
