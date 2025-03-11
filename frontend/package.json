@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@deck.gl/aggregation-layers": "^9.1.4",
     "@deck.gl/layers": "^9.1.4",
     "@deck.gl/react": "^9.1.4",
     "@fontsource/montserrat": "^5.2.5",
