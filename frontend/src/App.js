@@ -51,7 +51,7 @@ function App() {
               pitch: 45,
               bearing: 30,
             });
-            updateHeatmap(); // Refresh heatmap
+            updateHeatmap();
           })
           .catch((err) => setError(err.message || "Failed to get risk"));
       },
@@ -67,7 +67,7 @@ function App() {
               pitch: 45,
               bearing: 30,
             });
-            updateHeatmap(); // Refresh heatmap
+            updateHeatmap();
           });
       },
       { timeout: 5000 }
@@ -158,7 +158,7 @@ function App() {
               0,
               20,
               12,
-              60, // Increased radius for smoother coverage
+              60,
             ],
             "heatmap-opacity": [
               "interpolate",
@@ -211,7 +211,6 @@ function App() {
           map.current.getCanvas().style.cursor = "";
         });
 
-        // Add a legend
         const legend = document.createElement("div");
         legend.className = "map-legend";
         legend.innerHTML = `
@@ -224,7 +223,15 @@ function App() {
       });
     });
 
-    return () => map.current.remove();
+    // Simulate live updates every 10 seconds
+    const interval = setInterval(() => {
+      updateHeatmap();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      map.current.remove();
+    };
   }, []);
 
   return (
