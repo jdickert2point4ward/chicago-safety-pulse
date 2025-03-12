@@ -7,11 +7,13 @@ services:
     volumes:
       - ./backend:/app
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+    command: sh -c "npm install && npm start"
     depends_on:
       - backend
