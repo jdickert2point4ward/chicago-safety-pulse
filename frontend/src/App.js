@@ -83,9 +83,9 @@ function App() {
       zoom: 10,
       pitch: 45,
       bearing: 30,
-      fog: { // Add atmospheric fog for a modern look
-        "range": [0.5, 10],
-        "color": "rgba(255, 255, 255, 0.5)",
+      fog: {
+        range: [0.5, 10],
+        color: "rgba(255, 255, 255, 0.5)",
         "high-color": "rgba(255, 255, 255, 0.3)",
         "horizon-blend": 0.1
       }
@@ -158,7 +158,7 @@ function App() {
               0,
               20,
               12,
-              40,
+              60, // Increased radius for smoother coverage
             ],
             "heatmap-opacity": [
               "interpolate",
@@ -176,7 +176,7 @@ function App() {
           id: "safety-points",
           type: "circle",
           source: "safety-data",
-          minzoom: 11,
+          minzoom: 12,
           paint: {
             "circle-radius": 5,
             "circle-color": [
@@ -249,7 +249,7 @@ function App() {
           )}
         </div>
         <div className="map-container">
-          <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
+          <div ref={mapContainer} style={{ width: "100%", height: "100vh" }} />
         </div>
       </div>
     </div>
