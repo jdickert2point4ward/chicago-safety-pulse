@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
-from risk_grid import generate_mock_risk_grid
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -26,14 +25,8 @@ async def get_risk(data: dict):
     latitude = data.get("latitude", 41.85)
     longitude = data.get("longitude", -87.65)
 
-    lat_steps, lon_steps, risk_grid = generate_mock_risk_grid()
-    lat_idx = np.searchsorted(lat_steps, latitude) - 1
-    lon_idx = np.searchsorted(lon_steps, longitude) - 1
-
-    lat_idx = max(0, min(4, lat_idx))
-    lon_idx = max(0, min(4, lon_idx))
-
-    risk = int(risk_grid[lat_idx, lon_idx])  # Convert to int
+    # Mock risk calculation (replace with real model later)
+    risk = np.random.randint(0, 2)
     risk_score = 50 + 50 * risk
 
     return {
@@ -47,19 +40,24 @@ async def get_risk(data: dict):
 async def get_heatmap_data():
     try:
         logger.info("Generating heatmap data...")
-        lat_steps, lon_steps, risk_grid = generate_mock_risk_grid()
-        data = []
-        for i in range(len(lat_steps) - 1):
-            for j in range(len(lon_steps) - 1):
-                lat = float((lat_steps[i] + lat_steps[i + 1]) / 2)  # Convert to float
-                lon = float((lon_steps[j] + lon_steps[j + 1]) / 2)  # Convert to float
-                risk = int(risk_grid[i, j])  # Convert numpy.int64 to int
-                risk_score = 50 + 50 * risk  # 0-100 scale
-                data.append({
-                    "latitude": lat,
-                    "longitude": lon,
-                    "risk_score": risk_score
-                })
+        # Define Chicago bounds
+        lat_min, lat_max = 41.64, 42.06
+        lon_min, lon_max = -87.94, -87.52
+
+        # Generate 500 random points with mock risk scores
+        num_points = 500
+        latitudes = np.random.uniform(lat_min, lat_max, num_points)
+        longitudes = np.random.uniform(lon_min, lon_max, num_points)
+        risk_scores = np.random.uniform(0, 100, num_points)  # 0-100 scale
+
+        data = [
+            {
+                "latitude": float(lat),
+                "longitude": float(lon),
+                "risk_score": float(risk)
+            }
+            for lat, lon, risk in zip(latitudes, longitudes, risk_scores)
+        ]
         logger.info("Heatmap data generated successfully")
         return data
     except Exception as e:
