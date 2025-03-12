@@ -6,3 +6,6 @@ __pycache__/
 .env
 dist/
 build/
+*.png
+__pycache__/
+*.pyc
